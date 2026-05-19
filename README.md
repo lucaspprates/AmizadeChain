@@ -19,6 +19,48 @@ Não é criptomoeda financeira. A unidade simbólica é **ATT — Atitude**. Sin
 - Daemon/API `amizadechaind`.
 - Testes para core, genesis, PoW, mempool, storage e API.
 
+## Esquema da blockchain em funcionamento
+
+```mermaid
+flowchart LR
+    subgraph Entrada["Entrada de atitudes"]
+        CLI["amizadecli\ntx add"]
+        API["API HTTP\nPOST /v1/transactions"]
+        ID["Identidade Ed25519\nassinatura local"]
+    end
+
+    subgraph Validacao["Validação antes do bloco"]
+        TX["Transação Atitude\nTRUE_FRIENDSHIP / GRATITUDE / FALSE_FRIENDSHIP_SIGNAL"]
+        RULES["Regras simbólicas\npeso -100..100\nprivacidade\ntipo válido"]
+        SIG["Verificação\nID determinístico\nassinatura Ed25519"]
+        MEM["Mempool\npendentes sem duplicidade"]
+    end
+
+    subgraph Mineracao["Mineração"]
+        MINE["amizadecli mine\nou POST /v1/mine"]
+        MERKLE["Merkle root\nids das transações"]
+        POW["Proof of Work\nhash começa com N zeros"]
+        BLOCK["Novo bloco\nheight + previous_hash + nonce"]
+    end
+
+    subgraph Ledger["Livro-razão local"]
+        GEN["Genesis block\nmanifesto + princípios"]
+        CHAIN["Cadeia encadeada\nBlock #0 -> #1 -> #2"]
+        STORE["Storage local\ndata/chain.json"]
+        CHECK["Validação completa\nhash + merkle + assinaturas + PoW"]
+    end
+
+    CLI --> TX
+    API --> TX
+    ID --> SIG
+    TX --> RULES --> SIG --> MEM
+    MEM --> MINE --> MERKLE --> POW --> BLOCK
+    GEN --> CHAIN
+    BLOCK --> CHAIN --> STORE
+    CHAIN --> CHECK
+    CHECK -->|íntegra| OK["A cadeia está íntegra.\nO livro-razão permanece coerente."]
+```
+
 ## Rodando
 
 ```bash
