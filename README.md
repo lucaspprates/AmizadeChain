@@ -61,6 +61,66 @@ flowchart LR
     CHECK -->|íntegra| OK["A cadeia está íntegra.\nO livro-razão permanece coerente."]
 ```
 
+### Blockchain em ação: blocos sendo formados
+
+```mermaid
+flowchart TD
+    A["1. lucao cria identidade\npar Ed25519 local"] --> B["2. Registra atitude positiva\nTRUE_FRIENDSHIP\npeso +90"]
+    A --> C["3. Registra aprendizado privado\nFALSE_FRIENDSHIP_SIGNAL\npeso -35 / private_hash"]
+
+    B --> D["Assina transação\nprivate key local"]
+    C --> D
+    D --> E["Mempool\nTX#A presença\nTX#B discernimento"]
+
+    E --> F["Minerador lucao inicia mine"]
+    F --> G["Calcula Merkle Root\nHash(TX#A + TX#B)"]
+    G --> H["Procura nonce\nSHA-256(header) começa com 000"]
+
+    H --> I["Block #1 minerado\nprevious_hash = hash do Genesis\nmerkle_root = raiz das atitudes\nnonce = prova de trabalho"]
+
+    J["Block #0 Genesis\nmanifesto: a vida é um livro-razão\nhash 000c653..."] --> I
+    I --> K["Storage local\ndata/chain.json"]
+    K --> L["Validação da cadeia"]
+
+    L --> M{"Tudo confere?"}
+    M -->|Sim| N["✅ Ledger íntegro\nBlock #0 -> Block #1\natitudes preservadas"]
+    M -->|Não| O["❌ Falha detectada\nhash, merkle, assinatura ou PoW inválido"]
+
+    style J fill:#eef7ff,stroke:#2563eb,stroke-width:2px
+    style I fill:#ecfdf5,stroke:#16a34a,stroke-width:2px
+    style E fill:#fff7ed,stroke:#f97316,stroke-width:2px
+    style N fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+    style O fill:#fef2f2,stroke:#ef4444,stroke-width:2px
+```
+
+Exemplo visual da cadeia depois da mineração:
+
+```text
+┌────────────────────────────────────────────────────────────────────┐
+│ Block #0 — Genesis                                                 │
+│ hash: 000c653...                                                   │
+│ prev: 0000000...                                                   │
+│ txs : manifesto, princípios, amizade verdadeira, limites saudáveis │
+└──────────────────────────────┬─────────────────────────────────────┘
+                               │ previous_hash
+                               ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ Block #1 — Atitudes mineradas                                      │
+│ hash: 000305b...                                                   │
+│ prev: 000c653...                                                   │
+│ merkle: raiz(TX presença + TX discernimento)                       │
+│ txs : TRUE_FRIENDSHIP + FALSE_FRIENDSHIP_SIGNAL                    │
+└──────────────────────────────┬─────────────────────────────────────┘
+                               │ próximo bloco aponta para este hash
+                               ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ Block #2 — Próximas páginas do livro-razão                         │
+│ hash: 000....                                                      │
+│ prev: hash do Block #1                                             │
+│ txs : gratidão, reparação, lealdade, novos limites                 │
+└────────────────────────────────────────────────────────────────────┘
+```
+
 ## Rodando
 
 ```bash
