@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0.0",
+  "project": "AmizadeChain",
+  "subtitle": "A Vida é um Livro-Razão",
+  "purpose": "Blockchain educacional em Go para registrar atitudes simbólicas, amizade verdadeira, limites saudáveis e aprendizados sobre falsas amizades.",
+  "network": {
+    "chain_id": "amizadechain-local-v1",
+    "network_id": "amizade-local",
+    "environment": "local-first",
+    "token_symbol": "ATT",
+    "token_name": "Atitude",
+    "monetary_value": "none"
+  },
+  "genesis_poem": [
+    "No primeiro bloco não nasceu uma moeda.",
+    "Nasceu uma memória.",
+    "Porque a vida é um livro-razão,",
+    "e tudo que fazemos vira lançamento.",
+    "Amizade verdadeira soma presença,",
+    "falsa amizade revela padrões,",
+    "e cada limite bem colocado fecha uma página sem apagar a lição."
+  ],
+  "principles": [
+    "Atitudes valem mais que discursos.",
+    "Constância é uma assinatura de confiança.",
+    "Lealdade não exige plateia.",
+    "Falsa amizade não deve virar exposição: deve virar aprendizado, limite e discernimento.",
+    "O ledger registra padrões; pessoas continuam tendo direito à mudança.",
+    "Privacidade, consentimento e respeito vêm antes de qualquer registro público."
+  ],
+  "block": {
+    "header": {
+      "version": 1,
+      "chain_id": "amizadechain-local-v1",
+      "network_id": "amizade-local",
+      "height": 0,
+      "timestamp": "2026-05-19T03:00:00Z",
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "merkle_root": "ecffd77e454d7cba8b729ef61f5151a297ae69ff9bba346ca35eb708384234e6",
+      "difficulty": 3,
+      "miner": "genesis/amizadechain",
+      "nonce": 7795
+    },
+    "transactions": [
+      {
+        "index": 0,
+        "type": "GENESIS_DECLARATION",
+        "from": "genesis/livro-da-vida",
+        "to": "todos-os-nos",
+        "attitude": "verdade",
+        "weight": 100,
+        "visibility": "public_symbolic",
+        "message": "A vida é um livro-razão: cada atitude é um lançamento, cada escolha deixa um rastro, cada amizade verdadeira sustenta o saldo da alma.",
+        "tags": [
+          "vida",
+          "livro-razao",
+          "verdade",
+          "genesis"
+        ],
+        "created_at": "2026-05-19T03:00:00Z",
+        "id": "fe744a6436d8259979672eac71679b30ac1aeff82ae5b00036b4da3adfe32c1a"
+      },
+      {
+        "index": 1,
+        "type": "TRUE_FRIENDSHIP",
+        "from": "genesis/vida",
+        "to": "amizade-verdadeira",
+        "attitude": "presenca",
+        "weight": 90,
+        "visibility": "public_symbolic",
+        "message": "Amizade verdadeira é presença sem plateia, lealdade sem cobrança e cuidado quando ninguém está vendo.",
+        "tags": [
+          "presenca",
+          "lealdade",
+          "cuidado",
+          "constancia"
+        ],
+        "created_at": "2026-05-19T03:00:00Z",
+        "id": "94d97a5825e5d5f5a8bdf95847d3ff65961722c94ca714bf6ee5fcdd0a4d0cbd"
+      },
+      {
+        "index": 2,
+        "type": "TRUE_FRIENDSHIP",
+        "from": "genesis/coragem",
+        "to": "amizade-verdadeira",
+        "attitude": "correcao_com_respeito",
+        "weight": 85,
+        "visibility": "public_symbolic",
+        "message": "Amigo de verdade não aplaude a queda: corrige com respeito, protege com firmeza e caminha junto na reconstrução.",
+        "tags": [
+          "coragem",
+          "respeito",
+          "reconstrucao",
+          "confianca"
+        ],
+        "created_at": "2026-05-19T03:00:00Z",
+        "id": "603962d62e32533566e7bf7b964c8715b04083020c537dcfd15817973ff3a876"
+      },
+      {
+        "index": 3,
+        "type": "FALSE_FRIENDSHIP_SIGNAL",
+        "from": "genesis/experiencia",
+        "to": "limites-saudaveis",
+        "attitude": "discernimento",
+        "weight": -40,
+        "visibility": "public_symbolic_no_shame",
+        "message": "Falsa amizade também entra no livro: promessa sem presença, afeto por interesse, sorriso com inveja e silêncio quando a coragem era necessária. O ledger não acusa pessoas; ele revela padrões.",
+        "tags": [
+          "falsa-amizade",
+          "discernimento",
+          "limites",
+          "padroes"
+        ],
+        "created_at": "2026-05-19T03:00:00Z",
+        "id": "d8afdb215e7eae553afef906226fd5218f2f1992a00cfc6932684a312fd044c3"
+      },
+      {
+        "index": 4,
+        "type": "BOUNDARY_AND_LESSON",
+        "from": "genesis/amor-proprio",
+        "to": "proxima-pagina",
+        "attitude": "limite",
+        "weight": 70,
+        "visibility": "public_symbolic",
+        "message": "Quando uma página dói, ela ainda ensina. Limites são assinaturas de amor-próprio e perdão não é permissão para repetir dano.",
+        "tags": [
+          "limites",
+          "aprendizado",
+          "amor-proprio",
+          "perdao"
+        ],
+        "created_at": "2026-05-19T03:00:00Z",
+        "id": "c1d2cb30a3845b44e2466e6e69926414fb658d689c013154c0c71a2112d15483"
+      },
+      {
+        "index": 5,
+        "type": "CHAIN_COMMITMENT",
+        "from": "genesis/amizadechain",
+        "to": "futuro",
+        "attitude": "integridade",
+        "weight": 100,
+        "visibility": "public_symbolic",
+        "message": "Esta cadeia nasce para registrar atitudes, não aparências; constância, não discurso; verdade, não conveniência.",
+        "tags": [
+          "integridade",
+          "atitudes",
+          "escala",
+          "futuro"
+        ],
+        "created_at": "2026-05-19T03:00:00Z",
+        "id": "23613c3af10ef7b3c123375a2460823c89a436598514fd3f7d0f14a87dd8d2df"
+      }
+    ],
+    "hash": "000c65374b8ff01ec664f5a0a1e6bfdd889a49903eb02dd43786a6f604e6a582",
+    "hashing_note": "Hash SHA-256 do header em JSON canônico com chaves ordenadas e separadores compactos. A implementação pode recalcular e validar este valor.",
+    "merkle_note": "Merkle root calculado a partir dos ids das transações; quando há quantidade ímpar em um nível, o último hash é duplicado."
+  }
+}

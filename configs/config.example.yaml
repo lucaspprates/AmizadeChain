@@ -1,0 +1,22 @@
+node:
+  name: "amizade-node-01"
+  data_dir: "./data"
+  environment: "local"
+
+chain:
+  chain_id: "amizadechain-local-v1"
+  network_id: "amizade-local"
+  genesis_file: "./genesis.json"
+  difficulty: 3
+  max_transactions_per_block: 100
+
+api:
+  enabled: true
+  listen: "127.0.0.1:8080"
+
+mempool:
+  max_size: 1000
+
+privacy:
+  default_visibility: "public_symbolic"
+  allow_private_hash: true

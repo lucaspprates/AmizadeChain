@@ -1,0 +1,20 @@
+[
+  {
+    "type": "TRUE_FRIENDSHIP",
+    "to": "amigo-presente",
+    "attitude": "presenca",
+    "weight": 90,
+    "visibility": "public_symbolic",
+    "message": "Esteve presente quando ninguém estava vendo.",
+    "tags": ["presenca", "lealdade"]
+  },
+  {
+    "type": "FALSE_FRIENDSHIP_SIGNAL",
+    "to": "hash:amizade-sem-exposicao",
+    "attitude": "discernimento",
+    "weight": -35,
+    "visibility": "private_hash",
+    "message": "Padrão registrado como aprendizado, sem exposição.",
+    "tags": ["limite", "aprendizado"]
+  }
+]
