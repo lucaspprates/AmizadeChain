@@ -1,0 +1,16 @@
+ZCR18_FACTORY_SCHEDULER_BUILDER_V1
+parts=5
+part-00.sha256=a6490d722c5fcae8500e9596ca351363e36081048281b316480793caedf6437b
+part-01.sha256=1ccd39d5dabfd05c02f663e2a716a276bfcc0982e170c2d2cf34f787a96b8f6a
+part-02.sha256=7d9c8c6dc5b0cad0718b6c7a4a68e1449ff4b902f7d18caec933c38bda7b96cc
+part-03.sha256=eaa07a1ccddca183e2fb3813ec607c911e65f9a63c1bddc434f3392e595d664a
+part-04.sha256=4202e06bd99f972a7e4c0e4f71cd012c95894639e613c5a1901d0df91bc30b9b
+payload.size=21420
+payload.sha256=2e25d07b53fc2af13e2e58f0993a1d502b55916ff24eae012e007aa4519450b4
+script.size=58633
+script.sha256=084e4ca56158d85deed676e6054286b8f105b4a10c09039c8b4e0db0c8370cee
+base.branch=fix/16-opencode-result-provenance
+base.sha=31b2a8811cf931a5b4e155b30a3cb79927e1111c
+source.blob.sha= b3f2cc9ceae1265359b571e49aea96afb15783f2
+target.branch=type/18-factory-scheduler-maintenance
+issue=https://github.com/lucaspprates/Zoe-Coder-Router/issues/18
