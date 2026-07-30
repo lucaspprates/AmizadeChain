@@ -1,4 +1,4 @@
-# ONÇA-8X1 V2
+# ONÇA-8X1 V2.1
 
 Pacote operacional para conectar a Zoe de produção ao worker temporário
 `win-codex-wak-01`, executar Codex sem aprovação interativa e preservar
@@ -53,7 +53,7 @@ A contenção não depende do sandbox interno do Codex. Ela é feita por:
 O canário anterior só criava `result.json` no caminho feliz. Quando qualquer
 comando remoto falhava, o coletor via apenas “arquivo ausente”.
 
-O runner V2:
+O runner V2.1:
 
 - cria `result.json` em sucesso ou falha;
 - grava `failure_code` e `failure_detail`;
@@ -79,10 +79,35 @@ MANIFEST.json
 ## Instalação
 
 O instalador publicado no `AmizadeChain` baixa este pacote preso a um commit
-imutável, verifica blobs Git e instala em:
+imutável, verifica sete partes, payload, arquivo, manifesto, modos e sintaxe e
+instala atomicamente em:
 
 ```text
 /tmp/ONCA_8X1_V2
+```
+
+Âncoras imutáveis:
+
+```text
+package commit:   c32c62afffccfc8bc9058fa99229c6757b8e9d09
+installer commit: c60b4db434f0a066a0453403e15de3729e0ccc70
+installer blob:   fa08ffaf4c6b334f81894eed529d26d27056400c
+archive SHA256:   f314322067e44ac8329da535d6fdbdf6a3ae505f5934cd856ec38b2014f462fc
+```
+
+Execução na Zoe de produção:
+
+```bash
+curl -fsSL \
+'https://raw.githubusercontent.com/lucaspprates/AmizadeChain/c60b4db434f0a066a0453403e15de3729e0ccc70/tmp/onca-8x1-v2/install_onca_8x1_v2_1.sh' \
+-o /tmp/install_onca_8x1_v2_1.sh
+
+test "$(git hash-object /tmp/install_onca_8x1_v2_1.sh)" = \
+'fa08ffaf4c6b334f81894eed529d26d27056400c'
+
+bash -n /tmp/install_onca_8x1_v2_1.sh &&
+chmod 700 /tmp/install_onca_8x1_v2_1.sh &&
+/tmp/install_onca_8x1_v2_1.sh
 ```
 
 ## Comandos
@@ -96,6 +121,7 @@ cd /tmp/ONCA_8X1_V2
 ./onca-8x1-v2.sh bootstrap-worker
 ./onca-8x1-v2.sh canary
 ./onca-8x1-v2.sh install-bridge
+./onca-8x1-v2.sh collect-worker-evidence
 ```
 
 Ou execute a preparação encadeada:
@@ -158,6 +184,26 @@ As recomendações operacionais são instaladas em:
 
 O bridge também injeta a política em todos os prompts. Assim, as instruções não
 dependem apenas da descoberta de `AGENTS.md`.
+
+## Contrato terminal do bridge
+
+O bridge não aceita mais terminal implícito:
+
+- ZCR19 exige `terminal_status` e os campos fixos do contrato;
+- gates `read_only` exigem `gate_status`;
+- writers genéricos exigem `terminal_status`;
+- o objeto normalizado permanece como última linha de stdout;
+- falha do processo ou do contrato nunca é convertida em sucesso.
+
+## Coleta de evidências
+
+A qualquer momento, com a fábrica congelada:
+
+```bash
+./onca-8x1-v2.sh collect-worker-evidence
+```
+
+O teardown recolhe todos os jobs antes de remover autenticação e workspaces.
 
 ## Segurança
 
