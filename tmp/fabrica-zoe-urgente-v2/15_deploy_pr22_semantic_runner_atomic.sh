@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
+set -euo pipefail
 
 REPO_ROOT="/home/ubuntu/work/Zoe-Coder-Router"
 PR_WT="/home/ubuntu/worktrees/zoe-coder-router-runner-semantic-clean"
@@ -34,24 +34,22 @@ fail() {
   exit 1
 }
 
-cleanup() {
-  rm -rf "$STAGE"
-}
-
-rollback() {
+finalize() {
   local rc=$?
-  trap - ERR
+  trap - EXIT
   set +e
 
-  if [[ "$DEPLOYED" == true ]]; then
+  if [[ "$rc" -ne 0 && "$DEPLOYED" == true ]]; then
     echo
     echo "===== ROLLBACK AUTOMÁTICO ====="
     echo "Motivo: falha posterior à troca atômica; restaurando runtime anterior."
 
+    sudo rm -f "${RUNTIME}.rollback-new"
     sudo cp -a "$BACKUP_DIR/zoe_coder_router.py.before" "${RUNTIME}.rollback-new"
     sudo chown "$OLD_UID:$OLD_GID" "${RUNTIME}.rollback-new"
     sudo chmod "$OLD_MODE" "${RUNTIME}.rollback-new"
     sudo mv -f "${RUNTIME}.rollback-new" "$RUNTIME"
+    sudo sync -f "$RUNTIME"
 
     RESTORED_SHA="$(sha256sum "$RUNTIME" 2>/dev/null | awk '{print $1}')"
     if [[ "$RESTORED_SHA" == "$OLD_RUNTIME_SHA256" ]]; then
@@ -60,18 +58,18 @@ rollback() {
     else
       echo "ROLLBACK_RUNTIME: FAIL" >&2
       echo "RESTORED_SHA256=$RESTORED_SHA" >&2
+      rc=2
     fi
 
     echo "TIMER=$(systemctl is-active zoe-coder-reconcile.timer 2>/dev/null || true)"
     echo "PRODUCTION_ROLLED_BACK=true"
   fi
 
-  cleanup
+  rm -rf "$STAGE"
   exit "$rc"
 }
 
-trap rollback ERR
-trap cleanup EXIT
+trap finalize EXIT
 
 exec > >(tee "$LOG") 2>&1
 
@@ -250,8 +248,8 @@ sudo sync -f "${RUNTIME}.pr22-new"
   fail "arquivo staged no diretório de produção divergiu"
 
 sudo mv -f "${RUNTIME}.pr22-new" "$RUNTIME"
-sudo sync -f "$RUNTIME"
 DEPLOYED=true
+sudo sync -f "$RUNTIME"
 
 [[ "$(git hash-object "$RUNTIME")" == "$NEW_RUNTIME_BLOB" ]] ||
   fail "runtime instalado divergiu do blob aprovado"
