@@ -229,8 +229,8 @@ git -C "$REPO" merge-base --is-ancestor "$PR17_HEAD" "$MAIN_AFTER_PR17" ||
 
 gh pr view "$PR17" --repo "$GH_REPO" \
   --json state,isDraft,headRefOid,baseRefName,mergedAt,mergeCommit > "$EVIDENCE_TMP/pr17-after.json"
-python3 - "$EVIDENCE_TMP/pr17-after.json" "$PR17_HEAD" "$PR17_MERGE_SHA" <<'PY' ||
-  fail PR17_MERGED_READBACK_FAILED 'PR17 merged readback divergente'
+set +e
+python3 - "$EVIDENCE_TMP/pr17-after.json" "$PR17_HEAD" "$PR17_MERGE_SHA" <<'PY'
 import json
 import sys
 obj=json.load(open(sys.argv[1],encoding='utf-8'))
@@ -241,6 +241,10 @@ assert obj.get('mergedAt'), obj
 merge=obj.get('mergeCommit') or {}
 assert merge.get('oid') == sys.argv[3], obj
 PY
+PR17_READBACK_RC=$?
+set -e
+[[ "$PR17_READBACK_RC" == '0' ]] ||
+  fail PR17_MERGED_READBACK_FAILED 'PR17 merged readback divergente'
 
 set +e
 gh api --method PATCH "repos/$GH_REPO/pulls/$PR19" \
