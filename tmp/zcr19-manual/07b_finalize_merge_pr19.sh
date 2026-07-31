@@ -145,10 +145,12 @@ REMOTE_PR19="$(git -C "$REPO" ls-remote origin "refs/heads/$PR19_BRANCH" | awk '
 [[ "$REMOTE_MAIN" == "$MAIN_BEFORE" ]] || fail REMOTE_MAIN_CHANGED "$REMOTE_MAIN"
 [[ "$REMOTE_PR19" == "$PR19_HEAD" ]] || fail REMOTE_PR19_CHANGED "$REMOTE_PR19"
 
-git -C "$REPO" merge-base --is-ancestor "$MAIN_BEFORE" "$PR19_HEAD" ||
-  fail MAIN_NOT_ANCESTOR_OF_PR19 "$MAIN_BEFORE"
-[[ "$(git -C "$REPO" merge-base "$MAIN_BEFORE" "$PR19_HEAD")" == '0d935aa174850fa2581538c952d9fcbc832c6e80' ]] ||
-  fail UNEXPECTED_STACK_MERGE_BASE "$(git -C "$REPO" merge-base "$MAIN_BEFORE" "$PR19_HEAD")"
+STACK_BASE='0d935aa174850fa2581538c952d9fcbc832c6e80'
+MERGE_BASE="$(git -C "$REPO" merge-base "$MAIN_BEFORE" "$PR19_HEAD")"
+[[ "$MERGE_BASE" == "$STACK_BASE" ]] ||
+  fail UNEXPECTED_STACK_MERGE_BASE "$MERGE_BASE"
+[[ "$(git -C "$REPO" rev-parse "$MAIN_BEFORE^{tree}")" == "$(git -C "$REPO" rev-parse "$STACK_BASE^{tree}")" ]] ||
+  fail MAIN_TREE_NOT_EQUAL_STACK_BASE 'main merge tree differs from PR17 head tree'
 
 EXPECTED_DIFF="$(
   printf '%s\n' \
