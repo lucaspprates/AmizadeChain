@@ -38,13 +38,53 @@ for old, new, label in line_replacements:
         raise SystemExit(f"PATCH_SOURCE_MISMATCH:{label}:occurrences={count}")
     text = text.replace(old, new, 1)
 
-old_gate = '''bash -n "$PATCHED"
+old_gate = """bash -n "$PATCHED"
 echo "PATCHED_SHA256=$(sha256sum "$PATCHED" | awk '{print $1}')"
 echo "PATCHED_BLOB=$(git hash-object "$PATCHED")"
 echo 'PRESERVED_OWNED_QUEUE_PATCH=PASS'
 exec "$PATCHED"
+"""
+new_gate = """python3 - "$PATCHED" <<'PY_FINAL_SCRIPT_PATCH'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+old = r'''gh pr edit "$PR19" --repo "$GH_REPO" \\
+  --body-file "$EVIDENCE_TMP/pr19-final-body.md" \\
+  > "$EVIDENCE_TMP/pr19-body-update.txt" 2>&1 ||
+  fail PR19_BODY_UPDATE_FAILED 'não foi possível atualizar o corpo da PR19'
 '''
-new_gate = '''bash -n "$PATCHED"
+new = r'''python3 - "$EVIDENCE_TMP/pr19-final-body.md" "$EVIDENCE_TMP/pr19-body-payload.json" <<'PY_BODY_PAYLOAD'
+import json
+from pathlib import Path
+import sys
+
+body = Path(sys.argv[1]).read_text(encoding="utf-8")
+Path(sys.argv[2]).write_text(
+    json.dumps({"body": body}, ensure_ascii=False) + "\\n",
+    encoding="utf-8",
+)
+PY_BODY_PAYLOAD
+
+gh api --method PATCH "repos/$GH_REPO/pulls/$PR19" \\
+  --input "$EVIDENCE_TMP/pr19-body-payload.json" \\
+  > "$EVIDENCE_TMP/pr19-body-update.json" \\
+  2> "$EVIDENCE_TMP/pr19-body-update.stderr" ||
+  fail PR19_BODY_UPDATE_FAILED 'não foi possível atualizar o corpo da PR19 via REST'
+'''
+count = text.count(old)
+if count != 1:
+    raise SystemExit(f"FINAL_SCRIPT_PATCH_SOURCE_MISMATCH:pr_body_update:occurrences={count}")
+text = text.replace(old, new, 1)
+if "gh pr edit" in text:
+    raise SystemExit("FINAL_SCRIPT_STILL_CONTAINS_GH_PR_EDIT")
+if 'gh api --method PATCH "repos/$GH_REPO/pulls/$PR19"' not in text:
+    raise SystemExit("FINAL_SCRIPT_REST_BODY_UPDATE_MISSING")
+path.write_text(text, encoding="utf-8")
+PY_FINAL_SCRIPT_PATCH
+
+bash -n "$PATCHED"
 python3 - "$PATCHED" <<'PY_HEREDOC_CHECK'
 from pathlib import Path
 import re
@@ -74,12 +114,13 @@ missing = [item for item in required if item not in body]
 if missing:
     raise SystemExit(f"PRESERVED_JOB_BODY_FIELDS_MISSING:{missing}")
 print("HEREDOC_BACKTICK_CHECK=PASS")
+print("PR_BODY_UPDATE_TRANSPORT=REST_PATCH")
 PY_HEREDOC_CHECK
 echo "PATCHED_SHA256=$(sha256sum "$PATCHED" | awk '{print $1}')"
 echo "PATCHED_BLOB=$(git hash-object "$PATCHED")"
 echo 'PRESERVED_OWNED_QUEUE_PATCH=PASS'
 exec "$PATCHED"
-'''
+"""
 
 count = text.count(old_gate)
 if count != 1:
