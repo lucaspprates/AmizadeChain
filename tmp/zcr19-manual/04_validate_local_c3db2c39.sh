@@ -179,7 +179,10 @@ sudo install \
   "$TMP_LOG" \
   "$OPS/ETAPA-4-LOCAL-VALIDATION.txt"
 
+git -C "$REPO" fetch -q origin "$BRANCH"
 REMOTE_HEAD="$(git -C "$REPO" rev-parse "origin/$BRANCH")"
+[[ "$REMOTE_HEAD" == "$START_SHA" ]] ||
+  fail "remote branch changed before publication: $REMOTE_HEAD"
 
 echo
 echo 'MANUAL_ETAPA_4_READBACK: PASS'
