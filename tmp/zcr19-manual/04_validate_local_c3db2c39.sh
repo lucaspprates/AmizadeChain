@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+REPO='/home/ubuntu/worktrees/zoe-coder-router-18-factory-scheduler'
+OPS='/var/backups/zoe-coder-router/manual-8-etapas-20260731T104654Z'
+DB='/var/lib/zoe-coder-router/runtime.db'
+
+BRANCH='type/18-factory-scheduler-maintenance'
+START_SHA='a3b3f438dd2d6b365187248f11bcd661dba047fa'
+NEW_SHA='c3db2c39e58326c932e1a9276b1da9b4cecd45bb'
+EXPECTED_SUBJECT='fix(router): validate capacity plan job admission'
+
+TMP_LOG="$(mktemp /tmp/zcr19-etapa4.XXXXXX.log)"
+
+cleanup() {
+  rm -f "$TMP_LOG"
+}
+trap cleanup EXIT
+
+fail() {
+  printf 'MANUAL_ETAPA_4: FAIL: %s\n' "$*" >&2
+  exit 1
+}
+
+[[ "$(id -un)" == 'ubuntu' ]] || fail 'user must be ubuntu'
+[[ "$(hostname -s)" == 'zoe-infranetwork-com-br' ]] || fail 'unexpected hostname'
+[[ -d "$REPO" ]] || fail 'repository worktree missing'
+[[ -d "$OPS" ]] || fail 'operation directory missing'
+[[ -r "$DB" ]] || fail 'runtime database unreadable'
+
+TIMER="$(systemctl is-active zoe-coder-reconcile.timer 2>/dev/null || true)"
+[[ "$TIMER" == 'inactive' ]] || fail "reconcile timer is $TIMER"
+
+ACTIVE_UNITS="$(
+  systemctl list-units \
+    'zoe-coder-job@*.service' \
+    --state=active,activating \
+    --no-legend \
+    --no-pager 2>/dev/null |
+  awk 'NF{n++} END{print n+0}'
+)"
+[[ "$ACTIVE_UNITS" == '0' ]] || fail "active coder job units: $ACTIVE_UNITS"
+
+ACTIVE_WRITERS="$(
+  python3 - "$DB" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True)
+count = conn.execute(
+    """
+    SELECT COUNT(*)
+      FROM jobs
+     WHERE mode='write'
+       AND status IN (
+           'awaiting_capacity_plan',
+           'queued',
+           'dispatching',
+           'running'
+       )
+    """
+).fetchone()[0]
+conn.close()
+print(count)
+PY
+)"
+[[ "$ACTIVE_WRITERS" == '0' ]] || fail "active writers in DB: $ACTIVE_WRITERS"
+
+[[ "$(git -C "$REPO" branch --show-current)" == "$BRANCH" ]] ||
+  fail 'unexpected local branch'
+[[ "$(git -C "$REPO" rev-parse HEAD)" == "$NEW_SHA" ]] ||
+  fail 'local HEAD differs from rescued commit'
+[[ "$(git -C "$REPO" rev-parse HEAD^)" == "$START_SHA" ]] ||
+  fail 'rescued commit is not directly based on expected SHA'
+[[ "$(git -C "$REPO" rev-list --count "$START_SHA..$NEW_SHA")" == '1' ]] ||
+  fail 'expected exactly one new commit'
+[[ -z "$(git -C "$REPO" status --porcelain=v1 --untracked-files=all)" ]] ||
+  fail 'worktree is not clean'
+
+COMMIT_SUBJECT="$(git -C "$REPO" show -s --format='%s' "$NEW_SHA")"
+[[ "$COMMIT_SUBJECT" == "$EXPECTED_SUBJECT" ]] ||
+  fail "unexpected commit subject: $COMMIT_SUBJECT"
+
+CHANGED_FILES="$(
+  git -C "$REPO" diff --name-only "$START_SHA" "$NEW_SHA" | sort
+)"
+EXPECTED_FILES="$(
+  printf '%s\n' \
+    'src/zoe_coder_router/zoe_coder_router.py' \
+    'tests/test_factory_scheduler_maintenance.py' |
+  sort
+)"
+[[ "$CHANGED_FILES" == "$EXPECTED_FILES" ]] ||
+  fail "changed-file scope mismatch: $CHANGED_FILES"
+
+git -C "$REPO" diff --check "$START_SHA" "$NEW_SHA"
+
+cd "$REPO"
+
+{
+  echo '===== MANUAL ETAPA 4 / INVARIANTS ====='
+  echo "timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "hostname=$(hostname -s)"
+  echo "user=$(id -un)"
+  echo "branch=$BRANCH"
+  echo "start_sha=$START_SHA"
+  echo "new_sha=$NEW_SHA"
+  echo "commit_subject=$COMMIT_SUBJECT"
+  echo "changed_files_begin"
+  printf '%s\n' "$CHANGED_FILES"
+  echo "changed_files_end"
+  echo "active_job_units=$ACTIVE_UNITS"
+  echo "active_writers_db=$ACTIVE_WRITERS"
+  echo "timer=$TIMER"
+
+  echo
+  echo '===== ATOMIC ADMISSION FUNCTION ====='
+  sed -n \
+    '/^def admit_validated_capacity_plan/,/^def reconcile_terminal_receipts/p' \
+    src/zoe_coder_router/zoe_coder_router.py
+
+  echo
+  echo '===== CAPACITY PLAN REGRESSIONS ====='
+  PYTEST_ADDOPTS='-p no:cacheprovider' \
+  PYTHONDONTWRITEBYTECODE=1 \
+  python3 -B -m pytest -q \
+    tests/test_factory_scheduler_maintenance.py \
+    -k 'capacity_plan'
+
+  echo
+  echo '===== SCHEDULER MAINTENANCE ====='
+  PYTEST_ADDOPTS='-p no:cacheprovider' \
+  PYTHONDONTWRITEBYTECODE=1 \
+  python3 -B -m pytest -q \
+    tests/test_factory_scheduler_maintenance.py
+
+  echo
+  echo '===== PROVENANCE AND SMOKE ====='
+  PYTEST_ADDOPTS='-p no:cacheprovider' \
+  PYTHONDONTWRITEBYTECODE=1 \
+  python3 -B -m pytest -q \
+    tests/test_opencode_result_provenance.py \
+    tests/test_opencode_terminal_result_smoke.py
+
+  echo
+  echo '===== FULL SUITE ====='
+  PYTEST_ADDOPTS='-p no:cacheprovider' \
+  PYTHONDONTWRITEBYTECODE=1 \
+  python3 -B -m pytest -q
+
+  echo
+  echo '===== COMPILEALL ====='
+  PYTHONDONTWRITEBYTECODE=1 \
+  python3 -B -m compileall -q src tests
+  echo 'compileall=PASS'
+
+  echo
+  echo '===== DIFF CHECK ====='
+  git diff --check "$START_SHA" "$NEW_SHA"
+  echo 'diff_check=PASS'
+
+  echo
+  echo '===== FINAL WORKTREE ====='
+  FINAL_STATUS="$(git status --porcelain=v1 --untracked-files=all)"
+  [[ -z "$FINAL_STATUS" ]] || {
+    printf '%s\n' "$FINAL_STATUS"
+    exit 1
+  }
+  echo 'worktree_clean=true'
+
+  echo
+  echo 'MANUAL_ETAPA_4: PASS'
+} 2>&1 | tee "$TMP_LOG"
+
+sudo install \
+  -m 0600 \
+  -o root \
+  -g root \
+  "$TMP_LOG" \
+  "$OPS/ETAPA-4-LOCAL-VALIDATION.txt"
+
+REMOTE_HEAD="$(git -C "$REPO" rev-parse "origin/$BRANCH")"
+
+echo
+echo 'MANUAL_ETAPA_4_READBACK: PASS'
+echo "LOCAL_HEAD=$(git -C "$REPO" rev-parse HEAD)"
+echo "REMOTE_HEAD=$REMOTE_HEAD"
+echo "COMMIT_COUNT=$(git -C "$REPO" rev-list --count "$START_SHA..HEAD")"
+echo "ACTIVE_UNITS=$ACTIVE_UNITS"
+echo "ACTIVE_WRITERS_DB=$ACTIVE_WRITERS"
+echo "TIMER=$TIMER"
+echo "EVIDENCE=$OPS/ETAPA-4-LOCAL-VALIDATION.txt"
+echo 'NEXT=PUBLICAR_FAST_FORWARD_PR19'
